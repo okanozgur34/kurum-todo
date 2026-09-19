@@ -83,14 +83,14 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // FIREBASE YAPILANDIRMASI
+        // KENDİ FIREBASE CONFIG BİLGİLERİNİZİ BURAYA YAPIŞTIRIN
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            authDomain: "kurum-todo.firebaseapp.com",
+            projectId: "kurum-todo",
+            storageBucket: "kurum-todo.appspot.com",
+            messagingSenderId: "909388672371",
+            appId: "1:909388672371:web:8629e2773e179c54a96906"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -100,7 +100,6 @@
         const unitsRef = collection(db, "units");
 
         let currentRole = 'personel';
-        let loadedUnits = [];
         let currentNotes = [];
 
         // Rol Değiştirme Fonksiyonu
@@ -139,7 +138,7 @@
                 input.value = '';
             } catch (e) {
                 console.error("Birim ekleme hatası:", e);
-                alert("Birim kaydedilemedi. Firestore Rules izinlerinizi kontrol edin.\nHata: " + e.message);
+                alert("Birim kaydedilemedi: " + e.message);
             }
         });
 
@@ -156,7 +155,6 @@
 
         // BİRİMLERİ CANLI DİNLEME VE ARAYÜZE YANSITMA
         onSnapshot(query(unitsRef, orderBy("createdAt", "asc")), (snapshot) => {
-            loadedUnits = [];
             const unitListDiv = document.getElementById('unitList');
             const targetSelect = document.getElementById('targetUnitSelect');
             const filterSelect = document.getElementById('filterUnitSelect');
@@ -167,7 +165,6 @@
 
             snapshot.forEach((docSnap) => {
                 const u = { id: docSnap.id, ...docSnap.data() };
-                loadedUnits.push(u);
 
                 // Admin rozeti
                 const tag = document.createElement('span');
@@ -187,7 +184,7 @@
                 filterSelect.appendChild(opt2);
             });
         }, (error) => {
-            console.error("Birimler çekilemedi:", error);
+            console.error("Birimler çekilirken hata oluştu:", error);
         });
 
         // NOT EKLEME
@@ -206,11 +203,12 @@
                     author: author,
                     text: text,
                     targetUnit: targetUnit,
-                    isIdare: currentRole === 'idare',
+                    role: currentRole, // 'personel' veya 'idare'
                     createdAt: new Date()
                 });
                 document.getElementById('noteText').value = '';
             } catch (e) {
+                console.error("Not ekleme hatası:", e);
                 alert("Not gönderilemedi: " + e.message);
             }
         });
@@ -223,7 +221,7 @@
             });
             renderNotes();
         }, (error) => {
-            console.error("Notlar çekilemedi:", error);
+            console.error("Notlar çekilirken hata oluştu:", error);
         });
 
         // NOT SİLME
@@ -245,7 +243,8 @@
 
             const filteredNotes = currentNotes.filter(n => {
                 if (selectedFilter === 'HEPSI') return true;
-                return n.targetUnit === selectedFilter;
+                const noteUnit = n.targetUnit || 'Tüm Kurum';
+                return noteUnit === selectedFilter;
             });
 
             if (filteredNotes.length === 0) {
@@ -255,20 +254,21 @@
 
             filteredNotes.forEach(note => {
                 const card = document.createElement('div');
-                const isIdareNote = note.isIdare;
+                const isIdareNote = note.role === 'idare' || note.isIdare === true;
+                const unitName = note.targetUnit || 'Tüm Kurum';
 
                 card.className = `bg-white p-3.5 rounded-xl border-l-4 shadow-sm space-y-2 relative ${
                     isIdareNote ? 'border-purple-600 bg-purple-50/30' : 'border-blue-500'
                 }`;
 
-                const targetBadge = note.targetUnit === 'Tüm Kurum' 
+                const targetBadge = unitName === 'Tüm Kurum' 
                     ? `<span class="bg-gray-200 text-gray-700 text-[10px] px-2 py-0.5 rounded font-medium">📢 Tüm Kurum</span>`
-                    : `<span class="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded font-semibold">🏢 ${note.targetUnit}</span>`;
+                    : `<span class="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded font-semibold">🏢 ${unitName}</span>`;
 
                 card.innerHTML = `
                     <div class="flex justify-between items-center text-xs">
                         <div class="flex items-center gap-2">
-                            <span class="font-bold ${isIdareNote ? 'text-purple-900' : 'text-gray-800'}">${note.author}</span>
+                            <span class="font-bold ${isIdareNote ? 'text-purple-900' : 'text-gray-800'}">${note.author || 'Anonim'}</span>
                             <span class="text-[10px] text-gray-400">(${isIdareNote ? 'İdareci' : 'Personel'})</span>
                         </div>
                         <div class="flex items-center gap-2">
@@ -276,7 +276,7 @@
                             ${currentRole === 'idare' ? `<button onclick="deleteNote('${note.id}')" class="text-red-500 hover:text-red-700 font-bold text-sm ml-1">×</button>` : ''}
                         </div>
                     </div>
-                    <p class="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">${note.text}</p>
+                    <p class="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">${note.text || ''}</p>
                 `;
                 container.appendChild(card);
             });
