@@ -3,133 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kurum Görev Takip Portalı</title>
+    <title>Kurum Görev & Duyuru Portalı</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen p-4">
 
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 space-y-4">
+    <div class="max-w-2xl mx-auto space-y-6">
         
-        <!-- Başlık -->
-        <div class="border-b pb-3">
-            <h1 class="text-xl font-bold text-gray-800">Kurum İçi Not & Görev Portalı</h1>
-            <p class="text-sm text-gray-500">İdareci ve Personel İletişim Paneli</p>
+        <!-- ÜST BAŞLIK & ROL SEÇİMİ -->
+        <div class="bg-white p-4 rounded-xl shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">Kurum Duyuru & Görev Portalı</h1>
+                <p class="text-xs text-gray-500">Canlı Not & Görev Takip Sistemi</p>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                <button id="rolePersonel" onclick="setRole('personel')" class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all bg-white text-gray-800 shadow-sm">Personel</button>
+                <button id="roleIdare" onclick="setRole('idare')" class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all text-gray-600 hover:text-gray-800">İdareci / Admin</button>
+            </div>
         </div>
 
-        <!-- Kullanıcı Adı ve Rolü -->
-        <div class="grid grid-cols-2 gap-2">
-            <div>
-                <label class="block text-xs font-medium text-gray-700">Adınız Soyadınız</label>
-                <input id="userName" type="text" placeholder="Örn: Ahmet Yılmaz" class="w-full border rounded-lg p-2 text-sm bg-gray-50">
+        <!-- ADMIN PANELİ: BİRİM YÖNETİMİ (Sadece İdareciye Görünür) -->
+        <div id="adminUnitPanel" class="hidden bg-white p-4 rounded-xl shadow-sm border border-purple-200 space-y-3">
+            <h2 class="text-sm font-bold text-purple-900 flex items-center gap-2">
+                <span>🏢</span> Birim Yönetimi (Admin Paneli)
+            </h2>
+            <div class="flex gap-2">
+                <input type="text" id="newUnitInput" placeholder="Yeni birim adı (Örn: Bilgi İşlem)" class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <button id="addUnitBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors">Birim Ekle</button>
             </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-700">Kullanıcı Rolü</label>
-                <select id="roleSelect" class="w-full border rounded-lg p-2 text-sm bg-gray-50 text-gray-800">
-                    <option value="personel">Personel</option>
-                    <option value="idareci">İdareci</option>
+            <!-- Eklenen Birimler Listesi -->
+            <div id="unitList" class="flex flex-wrap gap-2 pt-1">
+                <!-- Dinamik birim etiketleri buraya gelecek -->
+            </div>
+        </div>
+
+        <!-- NOT/GÖREV PAYLAŞIM FORMU -->
+        <div class="bg-white p-4 rounded-xl shadow-sm space-y-3">
+            <h2 class="text-sm font-semibold text-gray-700">Yeni Duyuru / Görev Ekle</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input type="text" id="authorName" placeholder="Adınız Soyadınız" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                
+                <!-- Hedef Birim Seçimi -->
+                <select id="targetUnitSelect" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="Tüm Kurum">📢 Tüm Kurum (Genel)</option>
+                    <!-- Birimler buraya yüklenecek -->
                 </select>
             </div>
+
+            <textarea id="noteText" rows="3" placeholder="Notunuzu veya duyurunuzu buraya yazın..." class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            
+            <button id="sendBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-sm">
+                Gönder
+            </button>
         </div>
 
-        <!-- Not/Görev Yazma Alanı -->
-        <div class="space-y-2 border-t pt-3">
-            <label class="block text-sm font-medium text-gray-700">Yeni Duyuru / Not Paylaş</label>
-            <textarea id="noteInput" class="w-full border rounded-lg p-2.5 text-sm" rows="3" placeholder="Notunuzu veya görevi buraya yazın..."></textarea>
-            <button id="sendBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition">Gönder</button>
-        </div>
+        <!-- FİLTRELEME & AKIŞ -->
+        <div class="space-y-3">
+            <div class="flex justify-between items-center px-1">
+                <h2 class="text-sm font-bold text-gray-700">Duyuru & Görev Akışı</h2>
+                <select id="filterUnitSelect" class="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none bg-white">
+                    <option value="HEPSI">Tüm Akış</option>
+                    <option value="Tüm Kurum">Genel Duyurular</option>
+                    <!-- Birim filtreleri dinamik dolacak -->
+                </select>
+            </div>
 
-        <!-- Akış / Notlar Listesi -->
-        <div class="border-t pt-4 space-y-3">
-            <h2 class="text-md font-semibold text-gray-700">Paylaşılan Notlar</h2>
             <div id="notesContainer" class="space-y-3">
-                <p class="text-xs text-gray-400 text-center">Notlar yükleniyor...</p>
+                <!-- Notlar canlı olarak buraya aktarılacak -->
             </div>
         </div>
 
     </div>
 
-    <!-- Firebase SDK (Canlı Veritabanı Modülü) -->
+    <!-- FIREBASE MODULE SCRIPT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Ekran görüntünüzdeki yapılandırma bilgileri
+        // FIREBASE YAPILANDIRMASINIZ (Kendi Firebase bilgilerinizle değiştirin)
         const firebaseConfig = {
-            apiKey: "AIzaSyAbNoYgSL9kS1Ouzcr03ncHpvSvDv0lJs4",
-            authDomain: "kurum-todo.firebaseapp.com",
-            projectId: "kurum-todo",
-            storageBucket: "kurum-todo.firebasestorage.app",
-            messagingSenderId: "909388672371",
-            appId: "1:909388672371:web:8629e2773e179c54a96906",
-            measurementId: "G-5W7FJ9F1D7"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+
         const notesRef = collection(db, "notes");
+        const unitsRef = collection(db, "units");
 
-        const sendBtn = document.getElementById("sendBtn");
-        const noteInput = document.getElementById("noteInput");
-        const userName = document.getElementById("userName");
-        const roleSelect = document.getElementById("roleSelect");
-        const notesContainer = document.getElementById("notesContainer");
+        let currentRole = 'personel';
+        let loadedUnits = [];
 
-        // Veritabanına Not Ekleme
-        sendBtn.addEventListener("click", async () => {
-            const text = noteInput.value.trim();
-            const author = userName.value.trim() || "Anonim";
-            const role = roleSelect.value;
+        // Rol Değiştirme Fonksiyonu
+        window.setRole = (role) => {
+            currentRole = role;
+            const pBtn = document.getElementById('rolePersonel');
+            const iBtn = document.getElementById('roleIdare');
+            const adminPanel = document.getElementById('adminUnitPanel');
 
-            if (!text) {
-                alert("Lütfen bir not yazın!");
+            if (role === 'idare') {
+                iBtn.className = "px-3 py-1.5 text-xs font-semibold rounded-md transition-all bg-purple-600 text-white shadow-sm";
+                pBtn.className = "px-3 py-1.5 text-xs font-semibold rounded-md transition-all text-gray-600 hover:text-gray-800";
+                adminPanel.classList.remove('hidden');
+            } else {
+                pBtn.className = "px-3 py-1.5 text-xs font-semibold rounded-md transition-all bg-white text-gray-800 shadow-sm";
+                iBtn.className = "px-3 py-1.5 text-xs font-semibold rounded-md transition-all text-gray-600 hover:text-gray-800";
+                adminPanel.classList.add('hidden');
+            }
+            renderNotes();
+        };
+
+        // BİRİM EKLEME
+        document.getElementById('addUnitBtn').addEventListener('click', async () => {
+            const input = document.getElementById('newUnitInput');
+            const unitName = input.value.trim();
+            if (!unitName) return;
+
+            try {
+                await addDoc(unitsRef, { name: unitName, createdAt: new Date() });
+                input.value = '';
+            } catch (e) {
+                alert("Birim eklenirken hata oluştu: " + e.message);
+            }
+        });
+
+        // BİRİM SİLME
+        window.deleteUnit = async (unitId) => {
+            if (confirm("Bu birimi silmek istediğinize emin misiniz?")) {
+                await deleteDoc(doc(db, "units", unitId));
+            }
+        };
+
+        // BİRİMLERİ CANLI DİNLEME VE ARAYÜZE YANSITMA
+        onSnapshot(query(unitsRef, orderBy("createdAt", "asc")), (snapshot) => {
+            loadedUnits = [];
+            const unitListDiv = document.getElementById('unitList');
+            const targetSelect = document.getElementById('targetUnitSelect');
+            const filterSelect = document.getElementById('filterUnitSelect');
+
+            unitListDiv.innerHTML = '';
+            targetSelect.innerHTML = '<option value="Tüm Kurum">📢 Tüm Kurum (Genel)</option>';
+            filterSelect.innerHTML = '<option value="HEPSI">Tüm Akış</option><option value="Tüm Kurum">Genel Duyurular</option>';
+
+            snapshot.forEach((docSnap) => {
+                const u = { id: docSnap.id, ...docSnap.data() };
+                loadedUnits.push(u);
+
+                // Admin rozeti
+                const tag = document.createElement('span');
+                tag.className = "inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2.5 py-1 rounded-full font-medium";
+                tag.innerHTML = `${u.name} <button onclick="deleteUnit('${u.id}')" class="text-purple-600 hover:text-red-600 font-bold ml-1">×</button>`;
+                unitListDiv.appendChild(tag);
+
+                // Dropdown seçenekleri
+                const opt1 = document.createElement('option');
+                opt1.value = u.name;
+                opt1.textContent = u.name;
+                targetSelect.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = u.name;
+                opt2.textContent = u.name;
+                filterSelect.appendChild(opt2);
+            });
+        });
+
+        // NOT EKLEME
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const author = document.getElementById('authorName').value.trim();
+            const text = document.getElementById('noteText').value.trim();
+            const targetUnit = document.getElementById('targetUnitSelect').value;
+
+            if (!author || !text) {
+                alert("Lütfen adınızı ve mesajınızı girin.");
                 return;
             }
 
             try {
                 await addDoc(notesRef, {
-                    text: text,
                     author: author,
-                    role: role,
-                    createdAt: serverTimestamp()
+                    text: text,
+                    targetUnit: targetUnit,
+                    isIdare: currentRole === 'idare',
+                    createdAt: new Date()
                 });
-                noteInput.value = "";
-            } catch (error) {
-                console.error("Hata oluştu:", error);
-                alert("Mesaj gönderilemedi.");
+                document.getElementById('noteText').value = '';
+            } catch (e) {
+                alert("Not gönderilemedi: " + e.message);
             }
         });
 
-        // Canlı Veri Dinleme (Anlık Güncelleme)
-        onSnapshot(notesRef, (snapshot) => {
-            notesContainer.innerHTML = "";
-            let notes = [];
-            
-            snapshot.forEach((doc) => {
-                notes.push({ id: doc.id, ...doc.data() });
+        // NOTLARI CANLI DİNLEME
+        let currentNotes = [];
+        onSnapshot(query(notesRef, orderBy("createdAt", "desc")), (snapshot) => {
+            currentNotes = [];
+            snapshot.forEach((docSnap) => {
+                currentNotes.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            renderNotes();
+        });
+
+        // NOT SİLME
+        window.deleteNote = async (noteId) => {
+            if (confirm("Bu notu silmek istediğinize emin misiniz?")) {
+                await deleteDoc(doc(db, "notes", noteId));
+            }
+        };
+
+        // NOTLARI EKRANA BASTIRMA VE FİLTRELEME
+        function renderNotes() {
+            const container = document.getElementById('notesContainer');
+            const selectedFilter = document.getElementById('filterUnitSelect').value;
+            container.innerHTML = '';
+
+            const filteredNotes = currentNotes.filter(n => {
+                if (selectedFilter === 'HEPSI') return true;
+                return n.targetUnit === selectedFilter;
             });
 
-            // Tarihe göre sıralama
-            notes.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-
-            if (notes.length === 0) {
-                notesContainer.innerHTML = `<p class="text-xs text-gray-400 text-center">Henüz bir not paylaşılmadı.</p>`;
+            if (filteredNotes.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-6 text-sm">Gösterilecek not/duyuru bulunamadı.</div>';
                 return;
             }
 
-            notes.forEach((note) => {
-                const isIdare = note.role === "idareci";
-                const card = document.createElement("div");
-                card.className = `${isIdare ? 'bg-blue-50 border-blue-500' : 'bg-gray-50 border-gray-400'} border-l-4 p-3 rounded text-sm space-y-1 shadow-sm`;
-                
+            filteredNotes.forEach(note => {
+                const card = document.createElement('div');
+                const isIdareNote = note.isIdare;
+
+                card.className = `bg-white p-3.5 rounded-xl border-l-4 shadow-sm space-y-2 relative ${
+                    isIdareNote ? 'border-purple-600 bg-purple-50/30' : 'border-blue-500'
+                }`;
+
+                const targetBadge = note.targetUnit === 'Tüm Kurum' 
+                    ? `<span class="bg-gray-200 text-gray-700 text-[10px] px-2 py-0.5 rounded font-medium">📢 Tüm Kurum</span>`
+                    : `<span class="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded font-semibold">🏢 ${note.targetUnit}</span>`;
+
                 card.innerHTML = `
                     <div class="flex justify-between items-center text-xs">
-                        <span class="font-bold ${isIdare ? 'text-blue-700' : 'text-gray-700'}">${note.author} (${isIdare ? 'İdareci' : 'Personel'})</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold ${isIdareNote ? 'text-purple-900' : 'text-gray-800'}">${note.author}</span>
+                            <span class="text-[10px] text-gray-400">(${isIdareNote ? 'İdareci' : 'Personel'})</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${targetBadge}
+                            ${currentRole === 'idare' ? `<button onclick="deleteNote('${note.id}')" class="text-red-500 hover:text-red-700 font-bold text-sm ml-1">×</button>` : ''}
+                        </div>
                     </div>
-                    <p class="text-gray-800 text-sm">${note.text}</p>
+                    <p class="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">${note.text}</p>
                 `;
-                notesContainer.appendChild(card);
+                container.appendChild(card);
             });
-        });
+        }
+
+        document.getElementById('filterUnitSelect').addEventListener('change', renderNotes);
     </script>
 </body>
 </html>
